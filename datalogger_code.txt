@@ -1,0 +1,73 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#ifdef _WIN32
+    #include <windows.h>  // For Sleep() on Windows
+    #define SLEEP(ms) Sleep(ms)
+#else
+    #include <unistd.h>   // For sleep() on Linux/macOS
+    #define SLEEP(ms) usleep((ms) * 1000)
+#endif
+
+// Function to simulate temperature (°C)
+float simulateTemperature() {
+    return (rand() % 4000) / 100.0 - 10.0; // Range: -10°C to +30°C
+}
+
+// Function to simulate humidity (%)
+float simulateHumidity() {
+    return (rand() % 10100) / 100.0; // Range: 0% to 100%
+}
+
+// Function to get current time as timestamp string
+void getTimestamp(char *buffer, int size) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    strftime(buffer, size, "%Y-%m-%d %H:%M:%S", t);
+}
+
+int main() {
+    FILE *fp;
+    float temperature, humidity;
+    char timestamp[30];
+
+    srand(time(0)); // Seed random number generator
+
+    // Open (or create) file for logging
+    fp = fopen("data_log.txt", "a");
+    if (fp == NULL) {
+        printf("❌ Error: Could not open file for writing.\n");
+        return 1;
+    }
+
+    printf("=====================================\n");
+    printf("     Real-Time Data Logger (C)       \n");
+    printf("=====================================\n");
+    printf("Logging simulated data every 2 seconds...\n");
+    printf("Press Ctrl + C to stop logging.\n\n");
+
+    // Infinite loop for continuous data logging
+    while (1) {
+        // Simulate sensor readings
+        temperature = simulateTemperature();
+        humidity = simulateHumidity();
+
+        // Get current timestamp
+        getTimestamp(timestamp, sizeof(timestamp));
+
+        // Display readings in terminal
+        printf("[%s] Temperature: %.2f°C | Humidity: %.2f%%\n",
+               timestamp, temperature, humidity);
+
+        // Write readings to file
+        fprintf(fp, "%s,%.2f,%.2f\n", timestamp, temperature, humidity);
+        fflush(fp); // Immediately save to file
+
+        // Wait 2 seconds before next reading
+        SLEEP(2000);
+    }
+
+    fclose(fp);
+    return 0;
+}
